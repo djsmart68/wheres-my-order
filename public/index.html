@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Where's My Order?</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      max-width: 480px;
+      margin: 4rem auto;
+      padding: 0 1rem;
+      color: #1a1a1a;
+    }
+    h1 {
+      font-size: 1.5rem;
+    }
+    form {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+    input {
+      flex: 1;
+      padding: 0.5rem;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    button {
+      padding: 0.5rem 1rem;
+      font-size: 1rem;
+      border: none;
+      border-radius: 4px;
+      background: #1a73e8;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #1558b0;
+    }
+    #result {
+      padding: 1rem;
+      border-radius: 4px;
+      background: #f5f5f5;
+    }
+    #result.error {
+      background: #fdecea;
+      color: #9c2b1f;
+    }
+    #result dt {
+      font-weight: 600;
+    }
+    #result dd {
+      margin: 0 0 0.5rem 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>Where's My Order?</h1>
+  <form id="lookup-form">
+    <input
+      id="order-number"
+      type="text"
+      inputmode="numeric"
+      placeholder="Enter order number"
+      autocomplete="off"
+      required
+    >
+    <button type="submit">Check status</button>
+  </form>
+  <div id="result" hidden></div>
+
+  <script>
+    const form = document.getElementById("lookup-form");
+    const input = document.getElementById("order-number");
+    const result = document.getElementById("result");
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const orderNumber = input.value.trim();
+
+      result.hidden = false;
+      result.className = "";
+      result.textContent = "Checking...";
+
+      try {
+        const response = await fetch(`/api/status/${encodeURIComponent(orderNumber)}`);
+        const data = await response.json();
+
+        if (!response.ok) {
+          result.className = "error";
+          result.textContent = data.error || "Something went wrong.";
+          return;
+        }
+
+        result.innerHTML = `
+          <dl>
+            <dt>Order number</dt>
+            <dd>${data.orderNumber}</dd>
+            <dt>Status</dt>
+            <dd>${data.status}</dd>
+            <dt>Estimated delivery</dt>
+            <dd>${data.estimatedDelivery}</dd>
+          </dl>
+        `;
+      } catch (err) {
+        result.className = "error";
+        result.textContent = "Could not reach the server.";
+      }
+    });
+  </script>
+</body>
+</html>
