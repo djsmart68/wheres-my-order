@@ -32,6 +32,13 @@ test("GET /api/status/:orderNumber returns status for a valid order number", asy
   assert.match(body.estimatedDelivery, /^\d{4}-\d{2}-\d{2}$/);
 });
 
+test("GET /api/status/:orderNumber returns 'Held in customs' for order numbers starting with 9", async () => {
+  const res = await fetch(`${baseUrl}/api/status/9123456`);
+  assert.equal(res.status, 200);
+  const body = await res.json();
+  assert.equal(body.status, "Held in customs");
+});
+
 test("GET /api/status/:orderNumber is deterministic for the same order number", async () => {
   const first = await (await fetch(`${baseUrl}/api/status/9876543210`)).json();
   const second = await (await fetch(`${baseUrl}/api/status/9876543210`)).json();

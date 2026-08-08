@@ -22,7 +22,7 @@ export type OrderStatus = {
 
 export function getOrderStatus(orderNumber: string): OrderStatus {
   const hash = hashDigits(orderNumber);
-  const status = STATUSES[hash % STATUSES.length];
+  const status = orderNumber.startsWith("9") ? "Held in customs" : STATUSES[hash % STATUSES.length];
   const daysOffset = hash % 10;
 
   const estimatedDelivery = new Date();
