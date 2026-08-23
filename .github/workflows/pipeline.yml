@@ -1,0 +1,53 @@
+name: pipeline
+
+on:
+  push:
+    branches: [main]     # trigger 1: code merged to main
+  pull_request:          # trigger 2: any PR opened or updated
+
+permissions:
+  id-token: write        # allow this workflow to request GitHub's signed passport (the OIDC handshake)
+  contents: read
+
+env:
+  AWS_REGION: eu-west-2
+  ECR_REPO: wheres-my-order
+
+jobs:
+  typecheck:                         # JOB 1: read the code for contradictions
+    runs-on: ubuntu-latest           # conjure a fresh disposable Linux machine
+    steps:
+      - uses: actions/checkout@v4    # put our repository's code onto it
+      - uses: actions/setup-node@v4  # install Node...
+        with: { node-version: 24 }
+      - run: npm ci                  # ...fetch dependencies (ci = the strict, exact install robots use)
+      - run: npx tsc --noEmit        # the type checker. Silence is success; any error stops everything.
+
+  test:                              # JOB 2: run the code against its promises
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 24 }
+      - run: npm ci
+      - run: npm test                # the tests. Any failure stops everything here.
+
+  ship:                              # JOB 3: package and deliver
+    needs: [test, typecheck]         # only runs if BOTH verdicts above passed...
+    if: github.ref == 'refs/heads/main'   # ...and only for merges to main. PRs are tested, never shipped.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:                        # the passport moment: present GitHub's signed statement,
+          role-to-assume: arn:aws:iam::905962607410:role/wheres-my-order-deploy
+          aws-region: ${{ env.AWS_REGION }}    # ...receive the narrow AWS badge for a few minutes
+      - uses: aws-actions/amazon-ecr-login@v2
+        id: ecr                      # fetch the warehouse pass (the robot version of Step 6.3 line one)
+      - run: |
+          IMG=${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPO }}
+          docker build -t $IMG:${{ github.sha }} -t $IMG:latest .
+          docker push $IMG --all-tags
+          # Two labels on one crate: ":latest" (the movable "current" label App Runner watches)
+          # and the commit fingerprint (github.sha): a permanent tie between this exact crate
+          # and this exact reviewed code, forever. Auditors call this traceability.
