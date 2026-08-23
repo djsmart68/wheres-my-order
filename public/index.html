@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Where's My Order?</title>
+  <title>Where's My Order? v2</title>
   <style>
     body {
       font-family: system-ui, sans-serif;
@@ -56,7 +56,7 @@
   </style>
 </head>
 <body>
-  <h1>Where's My Order?</h1>
+  <h1>Where's My Order? v2</h1>
   <form id="lookup-form">
     <input
       id="order-number"
@@ -69,11 +69,14 @@
     <button type="submit">Check status</button>
   </form>
   <div id="result" hidden></div>
+  <footer>&copy; <span id="year"></span> Where's My Order?</footer>
 
   <script>
     const form = document.getElementById("lookup-form");
     const input = document.getElementById("order-number");
     const result = document.getElementById("result");
+
+    document.getElementById("year").textContent = new Date().getFullYear();
 
     form.addEventListener("submit", async (event) => {
       event.preventDefault();

@@ -66,4 +66,7 @@ test("GET / serves the HTML page", async () => {
   const res = await fetch(`${baseUrl}/`);
   assert.equal(res.status, 200);
   assert.match(res.headers.get("content-type") ?? "", /text\/html/);
+  const body = await res.text();
+  assert.match(body, /<h1>Where's My Order\? v2<\/h1>/);
+  assert.match(body, /<footer>.*<span id="year"><\/span>.*<\/footer>/);
 });
